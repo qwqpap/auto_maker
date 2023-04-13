@@ -3,13 +3,35 @@ import cv2
 import numpy
 import os
 import time
-
+import glob
 import cv2
 import numpy as np
 import random
 import numba
 from numba import jit
 
+
+def save_yolo_data(class_id, label, img, data_dir='data/'):
+    # Parse YOLO data
+
+    boxes = []
+    x, y, w, h = label
+    boxes.append([class_id, x, y, w, h])
+
+    # Save image
+    img_name = str(time.time())
+    img_save_path = 'img/' + img_name
+    #print(img_save_path)
+    img_save_path = img_save_path + '.png'
+    cv2.imwrite(img_save_path, img)
+
+    # Save YOLO data
+    data_name = img_name + '.txt'
+    data_save_path = os.path.join(data_dir, data_name)
+    #print(data_save_path)
+    with open(data_save_path, 'w') as f:
+        for box in boxes:
+            f.write('{} {} {} {} {}\n'.format(*box))
 
 @jit
 def mix_pic(img, img_back, loca_x, loca_y):
@@ -71,23 +93,27 @@ def img_mix(target_img, back_img):
     front_x, front_y = dst.shape[:2]
 
     back_img = cv2.resize(back_img, (1920, 1080))
-    rand_x = random.randint(200, 600)
-    rand_y = int(rand_x * (front_y / front_x))
+    rand_x = random.randint(200, 400)
+    rand_y = int(rand_x * (192/108))
     dst = cv2.resize(dst, (rand_x, rand_y))
-    position_x = random.randint(0, 1980 - rand_x - 1)
-    position_y = random.randint(0, 1080 - rand_y - 1)
+    position_x = random.randint(0, (1920 - rand_x))
+    position_y = random.randint(0, (1080 - rand_y))
 
-    fina = mix_pic(dst, back_img, rand_x, rand_y)
+    fina = mix_pic(dst, back_img, position_y, position_x)
     # back_img[0:af_cols, 0:af_rows] = dst
-    cv2.imshow('fin', fina)
+    #cv2.imshow('fin', fina)
     yolo_format = []
+    #print(position_x)
+    #print(position_y)
+    #print(rand_x)
+    #print(rand_y)
     yolo_format.append((position_x + rand_x / 2) / 1920)
     yolo_format.append((position_y + rand_y / 2) / 1080)
     yolo_format.append(rand_x / 1920)
     yolo_format.append(rand_y / 1080)
     print(yolo_format)
-
-    cv2.waitKey(0)
+    return fina, yolo_format
+    #cv2.waitKey(0)
 
 
 class AutoMakerDataYolo:
@@ -97,6 +123,7 @@ class AutoMakerDataYolo:
     '''
 
     def __init__(self):
+        self.image_names_target = None
         self.target_number = None
         self.target_name = None
         self.target_image_list = None
@@ -110,33 +137,95 @@ class AutoMakerDataYolo:
             quit()
 
     def got_data(self):
-        self.huge_location = gui.prompt(text='the path of background image', title='qwq', default='/data/image/')
-        self.target_location = gui.prompt(text='the path of target image', title='qwq', default='/data/target/')
-        self.made_number = gui.prompt(text='the number you want for each target image', title='qwq', default='114514')
-
+        self.huge_location = gui.prompt(text='the path of background image', title='qwq', default='back/')
+        self.target_location = gui.prompt(text='the path of target image', title='qwq', default='target/')
+        self.made_number = gui.prompt(text='the number you want for each target image', title='qwq', default='10')
+        self.made_number = int(self.made_number)
     def read_target(self):
         # 读取目标的数量种类，存在列表里
-        image_list = os.listdir(self.target_location)
-        self.target_name = []
-        self.target_image_list = []
-        for image_name in image_list:
-            if image_name.endswith('.jpg') or image_name.endswith('png'):
-                image = cv2.imread(self.huge_location + image_name)
-                self.target_image_list.append(image)
-                self.target_name.append(image_name)
-            else:
-                pass
-        self.target_number = len(self.target_name)
+        folder_path = self.target_location
+
+        # 指定目录下的所有jpg和png文件
+        img_files = glob.glob(folder_path+'*.jpg') + glob.glob(folder_path+'*.png')
+
+        # 存储文件名的列表
+        img_names = []
+
+        # 存储图像的列表
+        imgs = []
+
+        # 遍历所有图像文件
+        for file in img_files:
+            # 读取图像
+            img = cv2.imread(file)
+
+            # 获取文件名并去掉扩展名
+            #img_name = file.split('/')[-1].split('.')[0]
+            img_name = os.path.splitext(os.path.basename(file))[0]
+            # 添加到列表中
+            imgs.append(img)
+            img_names.append(img_name)
+        self.target_image_list = imgs
+        self.image_names_target = img_names
+
+    def read_back_image(self):
+        folder_path = self.huge_location
+        i = -1
+        for tg_img in self.target_image_list:
+            i = i + 1
+            print(i)
+            print('len'+str(len(self.target_image_list)))
+            for filename in os.listdir(folder_path):
+                # print(filename)
+                # print(os.listdir(folder_path))
+                # 判断文件类型是否为jpg或png图片
+                if filename.endswith('.JPG') or filename.endswith('.png'):
+                    #print('2')
+                    # 读取图片
+                    img_path = os.path.join(folder_path, filename)
+                    #print(img_path)
+                    img = cv2.imread(img_path)
+
+                    # 调用处理函数
+                    j = 0
+                    if j < self.made_number:
+                        fina_img, yolo_num = img_mix(tg_img, img)
+                        # img_name = self.image_names_target[i]
+                        save_yolo_data(i, yolo_num, fina_img)
+                        j = j+1
+                else:
+                    pass
+    def save_yolo_dataset_format(self,img_class, img_data, labels):
+        save_path = 'data/'
+        print('1')
+        # labels = self.image_names_target
+        """
+        Save data in YOLO dataset format with input labels, image class and img_data
+        Args:
+            labels (list): a list of bounding box labels, each label is a list of four values [x, y, w, h]
+            img_class (int): class number of the image
+            img_data (bytes): image data in binary format
+            save_path (str): path to save yolo dataset format file
+        """
+        # calculate center coordinates, width and height values for each label
+        yolo_labels = []
+        # for label in labels:
+        print(labels)
+        x, y, w, h = labels
+        yolo_labels.append(f"{img_class} {x} {y} {w} {h}\n")
+
+        # encode image data as JPEG format
 
 
-    def read_image(self):
-        image_list = os.listdir(self.target_location)
-        for image_name in image_list:
-            if image_name.endswith('.jpg') or image_name.endswith('png'):
-                image = cv2.imread(self.target_location + image_name)
-
-
+    def make_obj(self):
+        with open("obj.names", "w") as f:
+            for c in self.image_names_target:
+                print(self.image_names_target)
+                f.write(c + "\n")
 
 
 AUTO = AutoMakerDataYolo()
 AUTO.got_data()
+AUTO.read_target()
+AUTO.make_obj()
+AUTO.read_back_image()
