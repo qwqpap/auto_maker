@@ -7,7 +7,7 @@ import glob
 import cv2
 import numpy as np
 import random
-import numba
+# import numba
 from numba import jit
 
 
@@ -90,6 +90,7 @@ def img_mix(target_img, back_img):
     pts2 = np.float32([[x_delta, y_delta], transfer_x, transfer_y])
     M = cv2.getAffineTransform(pts1, pts2)
     dst = cv2.warpAffine(target_img, M, (rows, cols))
+    dst = cv2.blur(dst, (3, 3))
     front_x, front_y = dst.shape[:2]
 
     back_img = cv2.resize(back_img, (1920, 1080))
@@ -109,9 +110,9 @@ def img_mix(target_img, back_img):
     #print(rand_y)
     yolo_format.append((position_x + rand_x / 2) / 1920)
     yolo_format.append((position_y + rand_y / 2) / 1080)
-    yolo_format.append(rand_x / 1920)
-    yolo_format.append(rand_y / 1080)
-    print(yolo_format)
+    yolo_format.append((rand_x / 1920)*0.8)
+    yolo_format.append((rand_y / 1080)*0.8)
+    #print(yolo_format)
     return fina, yolo_format
     #cv2.waitKey(0)
 
@@ -179,7 +180,7 @@ class AutoMakerDataYolo:
                 # print(filename)
                 # print(os.listdir(folder_path))
                 # 判断文件类型是否为jpg或png图片
-                if filename.endswith('.JPG') or filename.endswith('.png'):
+                if filename.endswith('.JPG') or filename.endswith('.jfif') or filename.endswith('.jpg'):
                     #print('2')
                     # 读取图片
                     img_path = os.path.join(folder_path, filename)
@@ -188,16 +189,16 @@ class AutoMakerDataYolo:
 
                     # 调用处理函数
                     j = 0
-                    if j < self.made_number:
+                    while(j < self.made_number):
                         fina_img, yolo_num = img_mix(tg_img, img)
                         # img_name = self.image_names_target[i]
                         save_yolo_data(i, yolo_num, fina_img)
-                        j = j+1
+                        j = j + 1
                 else:
                     pass
     def save_yolo_dataset_format(self,img_class, img_data, labels):
         save_path = 'data/'
-        print('1')
+        #print('1')
         # labels = self.image_names_target
         """
         Save data in YOLO dataset format with input labels, image class and img_data
@@ -210,7 +211,7 @@ class AutoMakerDataYolo:
         # calculate center coordinates, width and height values for each label
         yolo_labels = []
         # for label in labels:
-        print(labels)
+        #print(labels)
         x, y, w, h = labels
         yolo_labels.append(f"{img_class} {x} {y} {w} {h}\n")
 
@@ -220,7 +221,7 @@ class AutoMakerDataYolo:
     def make_obj(self):
         with open("obj.names", "w") as f:
             for c in self.image_names_target:
-                print(self.image_names_target)
+                #print(self.image_names_target)
                 f.write(c + "\n")
 
 
