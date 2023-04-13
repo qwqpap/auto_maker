@@ -9,7 +9,42 @@ import numpy as np
 import random
 # import numba
 from numba import jit
+import shutil
+import re
+def pre_make():
+    src_folder = "images/"
+    dst_folder = "target/"
 
+    # 获取源文件夹中所有子文件夹的路径
+    subfolders = [f.path for f in os.scandir(src_folder) if f.is_dir()]
+    shutil.rmtree(dst_folder)
+    os.makedirs(dst_folder)
+    # 遍历每个子文件夹，并将其中的第一张图片复制到目标文件夹中
+    for folder in subfolders:
+        copied = False
+        for file in os.listdir(folder):
+            # 只处理jpg和png文件
+            if file.endswith(".jpg") or file.endswith(".png"):
+                # 构建目标文件路径，以子文件夹名称作为文件名前缀
+                file_prefix = os.path.basename(folder)
+                dst_file = os.path.join(dst_folder, file_prefix + "_" + file)
+                # 复制文件并重命名
+                shutil.copy(os.path.join(folder, file), dst_file)
+                # 删除源文件
+                os.remove(os.path.join(folder, file))
+                # 设置标志位，表示已经复制了一张图片
+                copied = True
+                # 删除文件名中的数字
+                dst_file_no_digit = re.sub(r"\d+", "", os.path.basename(dst_file))
+                dst_file_no_digit = os.path.join(os.path.dirname(dst_file), dst_file_no_digit)
+                os.rename(dst_file, dst_file_no_digit)
+                # 仅复制第一张图片
+                break
+        # 如果没有复制任何图片，则输出提示信息
+        if not copied:
+            print("未找到任何图片：%s" % folder)
+            return 114514
+        #flags just do it
 
 def save_yolo_data(class_id, label, img, data_dir='data/'):
     # Parse YOLO data
@@ -51,7 +86,7 @@ def mix_pic(img, img_back, loca_x, loca_y):
 
 def img_mix(target_img, back_img):
 
-    one_normal = np.random.normal(loc=1.0, scale=0.3, size=(1, 2))
+    one_normal = np.random.normal(loc=1.0, scale=0.2, size=(1, 2))
     zero_normal = np.random.normal(loc=0.0, scale=0.2, size=(1, 2))
     a = one_normal[0, 0]
     d = one_normal[0, 1]
@@ -124,6 +159,7 @@ class AutoMakerDataYolo:
     '''
 
     def __init__(self):
+        self.all_kind_location = None
         self.image_names_target = None
         self.target_number = None
         self.target_name = None
@@ -132,16 +168,19 @@ class AutoMakerDataYolo:
         self.target_location = None
         self.huge_location = None
         self.num = 1
-        self.yse_or_no = gui.confirm(text='make sure the name of target image is "class.png"', title='setup runing',
+        self.yse_or_no = gui.confirm(text='make sure you read the readme.md"', title='setup runing',
                                      buttons=['yes', 'no'])
+
         if self.yse_or_no == 'no':
             quit()
-
-    def got_data(self):
         self.huge_location = gui.prompt(text='the path of background image', title='qwq', default='back/')
         self.target_location = gui.prompt(text='the path of target image', title='qwq', default='target/')
         self.made_number = gui.prompt(text='the number you want for each target image', title='qwq', default='10')
         self.made_number = int(self.made_number)
+
+
+
+
     def read_target(self):
         # 读取目标的数量种类，存在列表里
         folder_path = self.target_location
@@ -226,7 +265,8 @@ class AutoMakerDataYolo:
 
 
 AUTO = AutoMakerDataYolo()
-AUTO.got_data()
-AUTO.read_target()
-AUTO.make_obj()
-AUTO.read_back_image()
+#AUTO.got_data()
+while pre_make() != 114514:
+    AUTO.read_target()
+    AUTO.make_obj()
+    AUTO.read_back_image()
