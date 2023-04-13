@@ -15,6 +15,8 @@ def pre_make():
     src_folder = "images/"
     dst_folder = "target/"
 
+
+
     # 获取源文件夹中所有子文件夹的路径
     subfolders = [f.path for f in os.scandir(src_folder) if f.is_dir()]
     shutil.rmtree(dst_folder)
