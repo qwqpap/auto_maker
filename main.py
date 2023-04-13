@@ -46,7 +46,7 @@ def pre_make():
             return 114514
         #flags just do it
 
-def save_yolo_data(class_id, label, img, data_dir='data/'):
+def save_yolo_data(class_id, label, img, data_dir='labels/'):
     # Parse YOLO data
 
     boxes = []
@@ -55,7 +55,7 @@ def save_yolo_data(class_id, label, img, data_dir='data/'):
 
     # Save image
     img_name = str(time.time())
-    img_save_path = 'img/' + img_name
+    img_save_path = 'images/' + img_name
     #print(img_save_path)
     img_save_path = img_save_path + '.png'
     cv2.imwrite(img_save_path, img)
@@ -130,7 +130,7 @@ def img_mix(target_img, back_img):
 
     back_img = cv2.resize(back_img, (1920, 1080))
     rand_x = random.randint(200, 400)
-    rand_y = int(rand_x * (192/108))
+    rand_y = int(rand_x * (3/5))
     dst = cv2.resize(dst, (rand_x, rand_y))
     position_x = random.randint(0, (1920 - rand_x))
     position_y = random.randint(0, (1080 - rand_y))
