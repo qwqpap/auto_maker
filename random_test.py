@@ -1,36 +1,64 @@
-import os
-import shutil
-import time
-import re
-# 设置源文件夹路径和目标文件夹路径
-src_folder = "images/"
-dst_folder = "target/"
+import numpy as np
+import cv2
+from numba import jit
+import random
 
-# 获取源文件夹中所有子文件夹的路径
-subfolders = [f.path for f in os.scandir(src_folder) if f.is_dir()]
-shutil.rmtree(dst_folder)
-os.makedirs(dst_folder)
-# 遍历每个子文件夹，并将其中的第一张图片复制到目标文件夹中
-for folder in subfolders:
-    copied = False
-    for file in os.listdir(folder):
-        # 只处理jpg和png文件
-        if file.endswith(".jpg") or file.endswith(".png"):
-            # 构建目标文件路径，以子文件夹名称作为文件名前缀
-            file_prefix = os.path.basename(folder)
-            dst_file = os.path.join(dst_folder, file_prefix + "_" + file)
-            # 复制文件并重命名
-            shutil.copy(os.path.join(folder, file), dst_file)
-            # 删除源文件
-            os.remove(os.path.join(folder, file))
-            # 设置标志位，表示已经复制了一张图片
-            copied = True
-            # 删除文件名中的数字
-            dst_file_no_digit = re.sub(r"\d+", "", os.path.basename(dst_file))
-            dst_file_no_digit = os.path.join(os.path.dirname(dst_file), dst_file_no_digit)
-            os.rename(dst_file, dst_file_no_digit)
-            # 仅复制第一张图片
-            break
-    # 如果没有复制任何图片，则输出提示信息
-    if not copied:
-        print("未找到任何图片：%s" % folder)
+front = cv2.imread("target.jpg")
+back = cv2.imread('back.jpg')
+
+
+@jit
+def mix_pic(img, img_back, loca_y, loca_x):
+    # loca_x = 10
+    # loca_y = 10
+
+    for x in range(img.shape[0]):  # 图片的高
+        for y in range(img.shape[1]):  # 图片的宽
+            px = img[x, y]
+            if px[0] == 0 and px[1] == 0 and px[2] == 0:
+                pass
+            else:
+                img_back[loca_x + x, loca_y + y] = px
+                # print('1')
+    return img_back
+
+
+def img_mix(target_img, back_img):
+    #one_normal = np.random.normal(loc=1.0, scale=0.2, size=(1, 4))
+    one_normal = np.random.random_sample(size=(1, 4))
+    a = one_normal[0, 0]
+    d = one_normal[0, 1]
+    b = one_normal[0, 2]
+    c = one_normal[0, 3]
+
+    # target_img = cv2.imread('target.jpg')
+    # back_img = cv2.imread('back.jpg')
+    target_img = cv2.resize(target_img, (500, 300))
+    cols, rows = target_img.shape[:2]
+    half_cols = cols/2
+    half_rows = rows/2
+    point_left_up = 0
+
+    basis_vector = min(cols, rows)
+
+
+
+    dst = 0
+    position_x = 0
+    position_y = 0
+
+    fina = mix_pic(dst, back_img, position_y, position_x)
+    # back_img[0:af_cols, 0:af_rows] = dst
+    cv2.imshow('fin', fina)
+    yolo_format = []
+    # print(position_x)
+    # print(position_y)
+    # print(rand_x)
+    # print(rand_y)
+
+    # print(yolo_format)
+    cv2.waitKey(0)
+    return fina, yolo_format
+
+
+img_mix(front, back)

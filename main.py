@@ -26,7 +26,7 @@ def pre_make():
         copied = False
         for file in os.listdir(folder):
             # 只处理jpg和png文件
-            if file.endswith(".jpg") or file.endswith(".png"):
+            if file.endswith(".JPG") or file.endswith(".png"):
                 # 构建目标文件路径，以子文件夹名称作为文件名前缀
                 file_prefix = os.path.basename(folder)
                 dst_file = os.path.join(dst_folder, file_prefix + "_" + file)
@@ -57,7 +57,7 @@ def save_yolo_data(class_id, label, img, data_dir='labels/'):
 
     # Save image
     img_name = str(time.time())
-    img_save_path = 'images/' + img_name
+    img_save_path = 'imagess/' + img_name
     #print(img_save_path)
     img_save_path = img_save_path + '.png'
     cv2.imwrite(img_save_path, img)
@@ -138,6 +138,7 @@ def img_mix(target_img, back_img):
     position_y = random.randint(0, (1080 - rand_y))
 
     fina = mix_pic(dst, back_img, position_y, position_x)
+    # never try to change this x and y
     # back_img[0:af_cols, 0:af_rows] = dst
     #cv2.imshow('fin', fina)
     yolo_format = []
