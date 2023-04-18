@@ -1,16 +1,40 @@
 import pyautogui as gui
-import cv2
-import numpy
 import os
 import time
 import glob
 import cv2
 import numpy as np
 import random
-# import numba
 from numba import jit
 import shutil
 import re
+def pre_move():
+    # 定义源目录和目标目录的路径
+    source_dir = '/image'
+    target_dir = '/images'
+
+    # 检查目标目录是否存在，如果存在就清空它
+    if os.path.exists(target_dir):
+        shutil.rmtree(target_dir)
+    # 创建目标目录
+    os.makedirs(target_dir)
+
+    # 递归遍历源目录
+    for root, dirs, files in os.walk(source_dir):
+        # 构造目标目录的路径
+        target_root = os.path.join(target_dir, os.path.relpath(root, source_dir))
+        # 如果目标目录不存在，就创建它
+        if not os.path.exists(target_root):
+            os.makedirs(target_root)
+        # 移动所有文件到目标目录中
+        for file in files:
+            source_path = os.path.join(root, file)
+            target_path = os.path.join(target_root, file)
+            shutil.move(source_path, target_path)
+        # 移动当前目录到目标目录中
+        if root != source_dir:
+            shutil.move(root, target_root)
+
 def pre_make():
     src_folder = "images/"
     dst_folder = "target/"
@@ -264,6 +288,7 @@ class AutoMakerDataYolo:
 
 AUTO = AutoMakerDataYolo()
 #AUTO.got_data()
+pre_move()
 while pre_make() != 114514:
     AUTO.read_target()
     AUTO.make_obj()
