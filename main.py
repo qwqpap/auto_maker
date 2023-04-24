@@ -50,7 +50,7 @@ def pre_make():
         copied = False
         for file in os.listdir(folder):
             # 只处理jpg和png文件
-            if file.endswith(".JPG") or file.endswith(".png"):
+            if file.endswith(".jpg") or file.endswith(".png"):
                 # 构建目标文件路径，以子文件夹名称作为文件名前缀
                 file_prefix = os.path.basename(folder)
                 dst_file = os.path.join(dst_folder, file_prefix + "_" + file)
@@ -153,6 +153,10 @@ def img_mix(target_img, back_img):
     M = cv2.getPerspectiveTransform(point1, point2)
     dst = cv2.warpPerspective(target_img, M, (targ_col, targ_row))
 
+    re_size = random.uniform(0.8,3)
+    dst = cv2.resize(dst, (0, 0), fx=re_size, fy=re_size, interpolation=cv2.INTER_NEAREST)
+    cols, rows = target_img.shape[:2]
+    #改变大小乐乐乐
     position_x = random.randint(0, (1920 - cols))
     position_y = random.randint(0, (1080 - rows))
     back_img = cv2.resize(back_img, (1920, 1080))
@@ -160,10 +164,10 @@ def img_mix(target_img, back_img):
     # back_img[0:af_cols, 0:af_rows] = dst
     cv2.imshow('fin', fina)
     yolo_format = []
-    yolo_format.append((position_x + targ_col / 2) / 1920)
-    yolo_format.append((position_y + targ_row / 2) / 1080)
-    yolo_format.append((targ_col / 1920) * 0.8)
-    yolo_format.append((targ_row / 1080) * 0.8)
+    yolo_format.append((position_x + cols / 2) / 1920)
+    yolo_format.append((position_y + rows / 2) / 1080)
+    yolo_format.append((cols / 1920) * 0.95)
+    yolo_format.append((rows / 1080) * 0.95)
     # print(position_x)
     # print(position_y)
     # print(rand_x)
@@ -253,6 +257,7 @@ class AutoMakerDataYolo:
                     while(j < self.made_number):
                         fina_img, yolo_num = img_mix(tg_img, img)
                         # img_name = self.image_names_target[i]
+                        fina_img = cv2.resize(fina_img, (720, 480))
                         save_yolo_data(i, yolo_num, fina_img)
                         j = j + 1
                 else:
@@ -288,7 +293,7 @@ class AutoMakerDataYolo:
 
 AUTO = AutoMakerDataYolo()
 #AUTO.got_data()
-pre_move()
+#pre_move()
 while pre_make() != 114514:
     AUTO.read_target()
     AUTO.make_obj()
