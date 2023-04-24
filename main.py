@@ -61,7 +61,7 @@ def pre_make():
                 # 设置标志位，表示已经复制了一张图片
                 copied = True
                 # 删除文件名中的数字
-                dst_file_no_digit = re.sub(r"\d+", "", os.path.basename(dst_file))
+                dst_file_no_digit = re.sub(r"\t+", "", os.path.basename(dst_file))
                 dst_file_no_digit = os.path.join(os.path.dirname(dst_file), dst_file_no_digit)
                 os.rename(dst_file, dst_file_no_digit)
                 # 仅复制第一张图片
