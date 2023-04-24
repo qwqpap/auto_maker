@@ -26,13 +26,13 @@ def mix_pic(img, img_back, loca_x, loca_y):
 
 
 def img_mix(target_img, back_img):
-    one_normal = np.random.normal(loc=1.0, scale=0.3, size=(1, 2))
-    zero_normal = np.random.normal(loc=0.0, scale=0.2, size=(1, 2))
+    one_normal = np.random.normal(loc=1.0, scale=0.3, size=(1, 4))
+    #zero_normal = np.random.normal(loc=0.0, scale=0.2, size=(1, 2))
     a = one_normal[0, 0]
     d = one_normal[0, 1]
-    b = zero_normal[0, 0]
-    c = zero_normal[0, 1]
-
+    b = one_normal[0, 3]
+    c = one_normal[0, 4]
+    
     #target_img = cv2.imread('target.jpg')
     #back_img = cv2.imread('back.jpg')
     target_img = cv2.resize(target_img, (460, 350))

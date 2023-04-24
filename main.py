@@ -1,25 +1,51 @@
 import pyautogui as gui
-import cv2
-import numpy
 import os
 import time
 import glob
 import cv2
 import numpy as np
 import random
-# import numba
 from numba import jit
 import shutil
 import re
+def pre_move():
+    # 定义源目录和目标目录的路径
+    source_dir = '/image'
+    target_dir = '/images'
+
+    # 检查目标目录是否存在，如果存在就清空它
+    if os.path.exists(target_dir):
+        shutil.rmtree(target_dir)
+    # 创建目标目录
+    os.makedirs(target_dir)
+
+    # 递归遍历源目录
+    for root, dirs, files in os.walk(source_dir):
+        # 构造目标目录的路径
+        target_root = os.path.join(target_dir, os.path.relpath(root, source_dir))
+        # 如果目标目录不存在，就创建它
+        if not os.path.exists(target_root):
+            os.makedirs(target_root)
+        # 移动所有文件到目标目录中
+        for file in files:
+            source_path = os.path.join(root, file)
+            target_path = os.path.join(target_root, file)
+            shutil.move(source_path, target_path)
+        # 移动当前目录到目标目录中
+        if root != source_dir:
+            shutil.move(root, target_root)
+
 def pre_make():
-    src_folder = "images/"
+    src_folder = "image/"
     dst_folder = "target/"
+
+
 
     # 获取源文件夹中所有子文件夹的路径
     subfolders = [f.path for f in os.scandir(src_folder) if f.is_dir()]
     shutil.rmtree(dst_folder)
     os.makedirs(dst_folder)
-    # 遍历每个子文件夹，并将其中的第一张图片复制到目标文件夹中
+    # 遍历每个子文件夹，并将其中的第一张图片复制到目标文件夹中Z
     for folder in subfolders:
         copied = False
         for file in os.listdir(folder):
@@ -35,7 +61,7 @@ def pre_make():
                 # 设置标志位，表示已经复制了一张图片
                 copied = True
                 # 删除文件名中的数字
-                dst_file_no_digit = re.sub(r"\d+", "", os.path.basename(dst_file))
+                dst_file_no_digit = re.sub(r"\t+", "", os.path.basename(dst_file))
                 dst_file_no_digit = os.path.join(os.path.dirname(dst_file), dst_file_no_digit)
                 os.rename(dst_file, dst_file_no_digit)
                 # 仅复制第一张图片
@@ -46,7 +72,7 @@ def pre_make():
             return 114514
         #flags just do it
 
-def save_yolo_data(class_id, label, img, data_dir='data/'):
+def save_yolo_data(class_id, label, img, data_dir='labels/'):
     # Parse YOLO data
 
     boxes = []
@@ -55,7 +81,7 @@ def save_yolo_data(class_id, label, img, data_dir='data/'):
 
     # Save image
     img_name = str(time.time())
-    img_save_path = 'img/' + img_name
+    img_save_path = 'imagess/' + img_name
     #print(img_save_path)
     img_save_path = img_save_path + '.png'
     cv2.imwrite(img_save_path, img)
@@ -85,71 +111,67 @@ def mix_pic(img, img_back, loca_x, loca_y):
 
 
 def img_mix(target_img, back_img):
-
-    one_normal = np.random.normal(loc=1.0, scale=0.2, size=(1, 2))
-    zero_normal = np.random.normal(loc=0.0, scale=0.2, size=(1, 2))
+    one_normal = np.random.normal(loc=0.5, scale=0.1, size=(1, 4))
+    # one_normal = np.random.random_sample(size=(1, 4))
     a = one_normal[0, 0]
     d = one_normal[0, 1]
-    b = zero_normal[0, 0]
-    c = zero_normal[0, 1]
+    b = one_normal[0, 2]
+    c = one_normal[0, 3]
+    a = (abs(a) + a) / 2
+    b = (abs(b) + b) / 2
+    c = (abs(c) + c) / 2
+    d = (abs(d) + d) / 2
 
-    # target_img = cv2.imread('target.jpg')
-    # back_img = cv2.imread('back.jpg')
-    target_img = cv2.resize(target_img, (460, 350))
+    target_img = cv2.resize(target_img, (500, 300))
     cols, rows = target_img.shape[:2]
-    basis_vector = max(cols, rows)
+    half_cols = cols / 2
+    half_rows = rows / 2
+    row_r_cols = cols / rows
+    left_up_point = [int(half_cols - half_cols * a), int(half_rows - a * half_rows)]
+    right_up_point = [int(half_cols + b * half_cols), int(half_rows - b * half_rows)]
+    left_down_point = [int(half_cols - half_cols * c), int(half_rows + c * half_rows)]
+    right_down_point = [int(half_cols + d * half_cols), int(half_rows + d * half_rows)]
 
-    # print(transfer_x)
+    x_sharp = int(half_cols * (1 - max(a, c)))
+    y_sharp = int(half_rows * (1 - max(a, b)))
 
-    # 传递小于0
-    anti_c = (abs(c) - c) / 2
-    anti_b = (abs(b) - b) / 2
-    x_delta = rows * anti_c
-    y_delta = cols * anti_b
+    left_up_point[0] = left_up_point[0] - x_sharp
+    left_up_point[1] = left_up_point[1] - y_sharp
+    right_down_point[0] = right_down_point[0] - x_sharp
+    right_down_point[1] = right_down_point[1] - y_sharp
+    left_down_point[0] = left_down_point[0] - x_sharp
+    left_down_point[1] = left_down_point[1] - y_sharp
+    right_up_point[0] = right_up_point[0] - x_sharp
+    right_up_point[1] = right_up_point[1] - y_sharp
+    targ_col = int(half_cols * max(b, d) + half_cols * max(a, c))
+    targ_row = int(half_rows * max(a, b) + half_rows * max(c, d))
+    # print(left_up_point,left_down_point,right_up_point,right_down_point)
+    point1 = np.float32([[0, 0], [cols, 0], [0, rows], [cols, rows]])
+    # print(cols)
+    # print(rows)
+    point2 = np.float32([left_up_point, right_up_point, left_down_point, right_down_point])
+    M = cv2.getPerspectiveTransform(point1, point2)
+    dst = cv2.warpPerspective(target_img, M, (targ_col, targ_row))
 
-    rows = int((a * rows + c * rows) + (2 * x_delta))
-    cols = int((b * cols + d * cols) + (2 * y_delta))
-    a = int(a * basis_vector)
-    b = int(b * basis_vector)
-    c = int(c * basis_vector)
-    d = int(d * basis_vector)
-
-    a = a + x_delta
-    b = b + y_delta
-    c = c + x_delta
-    d = d + y_delta
-    transfer_x = [a, b]
-    transfer_y = [c, d]
-
-    pts1 = np.float32([[0, 0], [basis_vector, 0], [0, basis_vector]])
-    pts2 = np.float32([[x_delta, y_delta], transfer_x, transfer_y])
-    M = cv2.getAffineTransform(pts1, pts2)
-    dst = cv2.warpAffine(target_img, M, (rows, cols))
-    dst = cv2.blur(dst, (3, 3))
-    front_x, front_y = dst.shape[:2]
-
+    position_x = random.randint(0, (1920 - cols))
+    position_y = random.randint(0, (1080 - rows))
     back_img = cv2.resize(back_img, (1920, 1080))
-    rand_x = random.randint(200, 400)
-    rand_y = int(rand_x * (192/108))
-    dst = cv2.resize(dst, (rand_x, rand_y))
-    position_x = random.randint(0, (1920 - rand_x))
-    position_y = random.randint(0, (1080 - rand_y))
-
     fina = mix_pic(dst, back_img, position_y, position_x)
     # back_img[0:af_cols, 0:af_rows] = dst
     #cv2.imshow('fin', fina)
     yolo_format = []
-    #print(position_x)
-    #print(position_y)
-    #print(rand_x)
-    #print(rand_y)
-    yolo_format.append((position_x + rand_x / 2) / 1920)
-    yolo_format.append((position_y + rand_y / 2) / 1080)
-    yolo_format.append((rand_x / 1920)*0.8)
-    yolo_format.append((rand_y / 1080)*0.8)
-    #print(yolo_format)
-    return fina, yolo_format
+    yolo_format.append((position_x + targ_col / 2) / 1920)
+    yolo_format.append((position_y + targ_row / 2) / 1080)
+    yolo_format.append((targ_col / 1920) * 0.8)
+    yolo_format.append((targ_row / 1080) * 0.8)
+    # print(position_x)
+    # print(position_y)
+    # print(rand_x)
+    # print(rand_y)
+
+    # print(yolo_format)
     #cv2.waitKey(0)
+    return fina, yolo_format
 
 
 class AutoMakerDataYolo:
@@ -219,7 +241,7 @@ class AutoMakerDataYolo:
                 # print(filename)
                 # print(os.listdir(folder_path))
                 # 判断文件类型是否为jpg或png图片
-                if filename.endswith('.JPG') or filename.endswith('.jfif') or filename.endswith('.jpg'):
+                if filename.endswith('.jpg') or filename.endswith('.jfif') or filename.endswith('.jpg'):
                     #print('2')
                     # 读取图片
                     img_path = os.path.join(folder_path, filename)
@@ -231,6 +253,7 @@ class AutoMakerDataYolo:
                     while(j < self.made_number):
                         fina_img, yolo_num = img_mix(tg_img, img)
                         # img_name = self.image_names_target[i]
+                        fina_img = cv2.resize(fina_img,(720,480))
                         save_yolo_data(i, yolo_num, fina_img)
                         j = j + 1
                 else:
@@ -266,6 +289,7 @@ class AutoMakerDataYolo:
 
 AUTO = AutoMakerDataYolo()
 #AUTO.got_data()
+#pre_move()
 while pre_make() != 114514:
     AUTO.read_target()
     AUTO.make_obj()
