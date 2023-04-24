@@ -45,7 +45,7 @@ def pre_make():
     subfolders = [f.path for f in os.scandir(src_folder) if f.is_dir()]
     shutil.rmtree(dst_folder)
     os.makedirs(dst_folder)
-    # 遍历每个子文件夹，并将其中的第一张图片复制到目标文件夹中
+    # 遍历每个子文件夹，并将其中的第一张图片复制到目标文件夹中Z
     for folder in subfolders:
         copied = False
         for file in os.listdir(folder):
@@ -121,9 +121,10 @@ def img_mix(target_img, back_img):
     b = (abs(b) + b) / 2
     c = (abs(c) + c) / 2
     d = (abs(d) + d) / 2
-
-    target_img = cv2.resize(target_img, (500, 300))
-    cols, rows = target_img.shape[:2]
+    zoom_random_y = random.randint(200, 600)
+    zoom_random_x = int(zoom_random_y * 1.69)
+    target_img = cv2.resize(target_img, (zoom_random_x, zoom_random_y))
+    cols, rows = zoom_random_x, zoom_random_y
     half_cols = cols / 2
     half_rows = rows / 2
     row_r_cols = cols / rows
@@ -143,7 +144,7 @@ def img_mix(target_img, back_img):
     left_down_point[1] = left_down_point[1] - y_sharp
     right_up_point[0] = right_up_point[0] - x_sharp
     right_up_point[1] = right_up_point[1] - y_sharp
-    targ_col = int(half_cols * max(b, d) + half_cols * max(a, c))
+    targ_col = int(half_cols * max(b, d) + half_cols * max(a, c)*1.3)
     targ_row = int(half_rows * max(a, b) + half_rows * max(c, d))
     # print(left_up_point,left_down_point,right_up_point,right_down_point)
     point1 = np.float32([[0, 0], [cols, 0], [0, rows], [cols, rows]])
@@ -153,21 +154,17 @@ def img_mix(target_img, back_img):
     M = cv2.getPerspectiveTransform(point1, point2)
     dst = cv2.warpPerspective(target_img, M, (targ_col, targ_row))
 
-    re_size = random.uniform(0.8,3)
-    dst = cv2.resize(dst, (0, 0), fx=re_size, fy=re_size, interpolation=cv2.INTER_NEAREST)
-    cols, rows = target_img.shape[:2]
-    #改变大小乐乐乐
     position_x = random.randint(0, (1920 - cols))
     position_y = random.randint(0, (1080 - rows))
     back_img = cv2.resize(back_img, (1920, 1080))
     fina = mix_pic(dst, back_img, position_y, position_x)
     # back_img[0:af_cols, 0:af_rows] = dst
-    cv2.imshow('fin', fina)
+    #cv2.imshow('fin', fina)
     yolo_format = []
-    yolo_format.append((position_x + cols / 2) / 1920)
-    yolo_format.append((position_y + rows / 2) / 1080)
-    yolo_format.append((cols / 1920) * 0.95)
-    yolo_format.append((rows / 1080) * 0.95)
+    yolo_format.append((position_x + targ_col / 2) / 1920)
+    yolo_format.append((position_y + targ_row / 2) / 1080)
+    yolo_format.append((targ_col / 1920) * 0.8)
+    yolo_format.append((targ_row / 1080) * 0.8)
     # print(position_x)
     # print(position_y)
     # print(rand_x)
@@ -245,7 +242,7 @@ class AutoMakerDataYolo:
                 # print(filename)
                 # print(os.listdir(folder_path))
                 # 判断文件类型是否为jpg或png图片
-                if filename.endswith('.JPG') or filename.endswith('.jfif') or filename.endswith('.jpg'):
+                if filename.endswith('.jpg') or filename.endswith('.jfif') or filename.endswith('.jpg'):
                     #print('2')
                     # 读取图片
                     img_path = os.path.join(folder_path, filename)
@@ -257,7 +254,7 @@ class AutoMakerDataYolo:
                     while(j < self.made_number):
                         fina_img, yolo_num = img_mix(tg_img, img)
                         # img_name = self.image_names_target[i]
-                        fina_img = cv2.resize(fina_img, (720, 480))
+                        fina_img = cv2.resize(fina_img,(720,480))
                         save_yolo_data(i, yolo_num, fina_img)
                         j = j + 1
                 else:
